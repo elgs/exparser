@@ -1,5 +1,5 @@
 // exparser_test
-package main
+package exparser
 
 import (
 	"testing"
@@ -14,6 +14,8 @@ func TestTokenize(t *testing.T) {
 		{"1+2", []string{"1", "+", "2"}},
 		{"1+2+(3*4)", []string{"1", "+", "2", "+", "(", "3", "*", "4", ")"}},
 		{"1+2+(3*4)^34", []string{"1", "+", "2", "+", "(", "3", "*", "4", ")", "^", "34"}},
+		{"'123  456' 789", []string{"123  456", "789"}},
+		{`123 "456  789"`, []string{"123", "456  789"}},
 	}
 	var fail = []struct {
 		in string

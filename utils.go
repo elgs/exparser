@@ -1,5 +1,5 @@
 // utils
-package main
+package exparser
 
 import ()
 

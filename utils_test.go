@@ -1,5 +1,5 @@
-// exparser_test
-package main
+// utils_test
+package exparser
 
 import (
 	"testing"

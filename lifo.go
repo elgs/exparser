@@ -1,4 +1,4 @@
-package main
+package exparser
 
 type Stack struct {
 	top  *Element

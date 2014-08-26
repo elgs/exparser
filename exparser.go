@@ -1,4 +1,4 @@
-package main
+package exparser
 
 import (
 	"fmt"
@@ -6,16 +6,16 @@ import (
 	"unicode"
 )
 
-var operators = "+-*/^"
+var operators = "+-*/^()"
 
 func Tokenize(exp string) (tokens []string) {
-	l, n := false, false
+	sq, dq, l, n := false, false, false, false
 	var tmp string
 	for _, v := range exp {
 		s := string(v)
 		switch {
 		case unicode.IsNumber(v) || s == ".":
-			if !n && len(tmp) > 0 {
+			if !n && len(tmp) > 0 && !sq && !dq {
 				tokens = append(tokens, tmp)
 				tmp = ""
 			}
@@ -23,7 +23,7 @@ func Tokenize(exp string) (tokens []string) {
 			l = false
 			n = true
 		case unicode.IsLetter(v):
-			if !l && len(tmp) > 0 {
+			if !l && len(tmp) > 0 && !sq && !dq {
 				tokens = append(tokens, tmp)
 				tmp = ""
 			}
@@ -31,58 +31,63 @@ func Tokenize(exp string) (tokens []string) {
 			l = true
 			n = false
 		case unicode.IsSpace(v):
-			if len(tmp) > 0 {
-				tokens = append(tokens, tmp)
-				tmp = ""
+			if sq || dq {
+				tmp += s
+			} else {
+				if len(tmp) > 0 && !sq && !dq {
+					tokens = append(tokens, tmp)
+					tmp = ""
+				}
+				l = false
+				n = false
 			}
-			l = false
-			n = false
 		case s == "'":
-			if len(tmp) > 0 {
-				tokens = append(tokens, tmp)
-				tmp = ""
+			if !dq {
+				sq = !sq
 			}
-			l = false
-			n = false
+			if !sq && !dq {
+				if len(tmp) > 0 {
+					tokens = append(tokens, tmp)
+					tmp = ""
+				}
+				l = false
+				n = false
+			}
 		case s == "\"":
-			if len(tmp) > 0 {
-				tokens = append(tokens, tmp)
-				tmp = ""
+			if !sq {
+				dq = !dq
 			}
-			l = false
-			n = false
-		case string(v) == "(":
-			if len(tmp) > 0 {
-				tokens = append(tokens, tmp)
-				tmp = ""
+			if !sq && !dq {
+				if len(tmp) > 0 {
+					tokens = append(tokens, tmp)
+					tmp = ""
+				}
+				l = false
+				n = false
 			}
-			l = false
-			n = false
-			tokens = append(tokens, s)
-		case s == ")":
-			if len(tmp) > 0 {
-				tokens = append(tokens, tmp)
-				tmp = ""
-			}
-			l = false
-			n = false
-			tokens = append(tokens, s)
 		case strings.ContainsRune(operators, v):
-			if len(tmp) > 0 {
-				tokens = append(tokens, tmp)
-				tmp = ""
+			if sq || dq {
+				tmp += s
+			} else {
+				if len(tmp) > 0 {
+					tokens = append(tokens, tmp)
+					tmp = ""
+				}
+				l = false
+				n = false
+				tokens = append(tokens, s)
 			}
-			l = false
-			n = false
-			tokens = append(tokens, s)
 		default:
-			if len(tmp) > 0 {
-				tokens = append(tokens, tmp)
-				tmp = ""
+			if sq || dq {
+				tmp += s
+			} else {
+				if len(tmp) > 0 {
+					tokens = append(tokens, tmp)
+					tmp = ""
+				}
+				l = false
+				n = false
 			}
-			l = false
-			n = false
-			fmt.Println("Oops: ", s)
 		}
 	}
 	if len(tmp) > 0 {
