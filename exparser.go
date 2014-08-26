@@ -1,7 +1,6 @@
 package exparser
 
 import (
-	"fmt"
 	"strings"
 	"unicode"
 )
@@ -19,17 +18,17 @@ func Tokenize(exp string) (tokens []string) {
 				tokens = append(tokens, tmp)
 				tmp = ""
 			}
-			tmp += s
 			l = false
 			n = true
+			tmp += s
 		case unicode.IsLetter(v):
 			if !l && len(tmp) > 0 && !sq && !dq {
 				tokens = append(tokens, tmp)
 				tmp = ""
 			}
-			tmp += s
 			l = true
 			n = false
+			tmp += s
 		case unicode.IsSpace(v):
 			if sq || dq {
 				tmp += s
@@ -42,28 +41,32 @@ func Tokenize(exp string) (tokens []string) {
 				n = false
 			}
 		case s == "'":
-			if !dq {
+			if dq {
+				tmp += s
+			} else {
 				sq = !sq
-			}
-			if !sq && !dq {
-				if len(tmp) > 0 {
-					tokens = append(tokens, tmp)
-					tmp = ""
+				if !sq {
+					if len(tmp) > 0 {
+						tokens = append(tokens, tmp)
+						tmp = ""
+					}
+					l = false
+					n = false
 				}
-				l = false
-				n = false
 			}
 		case s == "\"":
-			if !sq {
+			if sq {
+				tmp += s
+			} else {
 				dq = !dq
-			}
-			if !sq && !dq {
-				if len(tmp) > 0 {
-					tokens = append(tokens, tmp)
-					tmp = ""
+				if !dq {
+					if len(tmp) > 0 {
+						tokens = append(tokens, tmp)
+						tmp = ""
+					}
+					l = false
+					n = false
 				}
-				l = false
-				n = false
 			}
 		case strings.ContainsRune(operators, v):
 			if sq || dq {
@@ -95,13 +98,4 @@ func Tokenize(exp string) (tokens []string) {
 		tmp = ""
 	}
 	return
-}
-
-func main() {
-	s := "1.2 + 3 * (4-5)"
-	tokens := Tokenize(s)
-	for i, v := range tokens {
-		fmt.Println(i, v)
-	}
-
 }
