@@ -14,20 +14,24 @@ func Tokenize(exp string) (tokens []string) {
 		s := string(v)
 		switch {
 		case unicode.IsNumber(v) || s == ".":
-			if !n && len(tmp) > 0 && !sq && !dq {
-				tokens = append(tokens, tmp)
-				tmp = ""
+			if !sq && !dq {
+				if !n && len(tmp) > 0 {
+					tokens = append(tokens, tmp)
+					tmp = ""
+				}
+				l = false
+				n = true
 			}
-			l = false
-			n = true
 			tmp += s
 		case unicode.IsLetter(v):
-			if !l && len(tmp) > 0 && !sq && !dq {
-				tokens = append(tokens, tmp)
-				tmp = ""
+			if !sq && !dq {
+				if !l && len(tmp) > 0 {
+					tokens = append(tokens, tmp)
+					tmp = ""
+				}
+				l = true
+				n = false
 			}
-			l = true
-			n = false
 			tmp += s
 		case unicode.IsSpace(v):
 			if sq || dq {
