@@ -1,5 +1,9 @@
 package exparser
 
+import (
+	"fmt"
+)
+
 type Lifo struct {
 	top  *Element
 	size int
@@ -34,4 +38,13 @@ func (s *Lifo) Peep() (value interface{}) {
 		return
 	}
 	return nil
+}
+
+func (s *Lifo) Print() {
+	tmp := s.top
+	for i := 0; i < s.Len(); i++ {
+		fmt.Print(tmp.value, ", ")
+		tmp = tmp.next
+	}
+	fmt.Println()
 }

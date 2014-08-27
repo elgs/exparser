@@ -3,6 +3,7 @@ package exparser
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"unicode"
@@ -14,14 +15,134 @@ type opp struct {
 	associativity bool `false: left, true: right`
 }
 
-var operators = "+-*/^"
+var operators = "+-*/%^"
 var parentheses = "()"
 var operatorPrecedence = []opp{
 	{"+", 2, false},
 	{"-", 2, false},
 	{"*", 3, false},
 	{"/", 3, false},
+	{"%", 3, false},
 	{"^", 4, true},
+}
+
+func Evaluate(expression string) (string, error) {
+	tokens := Tokenize(expression)
+	_, rpn, err := ParseRPN(tokens)
+	if err != nil {
+		return "", err
+	}
+	return Calculate(rpn, true)
+}
+
+func eval(op string, left string, right string) (string, error) {
+	isDec := strings.Contains(left, ".") || strings.Contains(right, ".") || op == "/"
+	switch op {
+	case "+":
+		if isDec {
+			l, err := strconv.ParseFloat(left, 64)
+			r, err := strconv.ParseFloat(right, 64)
+			return fmt.Sprint(l + r), err
+		} else {
+			l, err := strconv.ParseInt(left, 10, 64)
+			r, err := strconv.ParseInt(right, 10, 64)
+			return fmt.Sprint(l + r), err
+		}
+	case "-":
+		if isDec {
+			l, err := strconv.ParseFloat(left, 64)
+			r, err := strconv.ParseFloat(right, 64)
+			return fmt.Sprint(l - r), err
+		} else {
+			l, err := strconv.ParseInt(left, 10, 64)
+			r, err := strconv.ParseInt(right, 10, 64)
+			return fmt.Sprint(l - r), err
+		}
+	case "*":
+		if isDec {
+			l, err := strconv.ParseFloat(left, 64)
+			r, err := strconv.ParseFloat(right, 64)
+			return fmt.Sprint(l * r), err
+		} else {
+			l, err := strconv.ParseInt(left, 10, 64)
+			r, err := strconv.ParseInt(right, 10, 64)
+			return fmt.Sprint(l * r), err
+		}
+	case "/":
+		if isDec {
+			l, err := strconv.ParseFloat(left, 64)
+			r, err := strconv.ParseFloat(right, 64)
+			if r == 0 {
+				return "", errors.New(fmt.Sprint("Failed to evaluate:", left, op, right))
+			}
+			return fmt.Sprint(l / r), err
+		} else {
+			l, err := strconv.ParseInt(left, 10, 64)
+			r, err := strconv.ParseInt(right, 10, 64)
+			if r == 0 {
+				return "", errors.New(fmt.Sprint("Failed to evaluate:", left, op, right))
+			}
+			return fmt.Sprint(l / r), err
+		}
+	case "%":
+		if isDec {
+			return "", errors.New(fmt.Sprint("Failed to evaluate:", left, op, right))
+		} else {
+			l, err := strconv.ParseInt(left, 10, 64)
+			r, err := strconv.ParseInt(right, 10, 64)
+			if r == 0 {
+				return "", errors.New(fmt.Sprint("Failed to evaluate:", left, op, right))
+			}
+			return fmt.Sprint(l % r), err
+		}
+	case "^":
+		l, err := strconv.ParseFloat(left, 64)
+		r, err := strconv.ParseFloat(right, 64)
+		if isDec {
+			return fmt.Sprint(math.Pow(l, r)), err
+		} else {
+			return fmt.Sprint(int64(math.Pow(l, r))), err
+		}
+	}
+	return "", errors.New(fmt.Sprint("Failed to evaluate:", left, op, right))
+}
+
+func Calculate(ts *Lifo, postfix bool) (string, error) {
+	newTs := &Lifo{}
+	for ti := ts.Pop(); ti != nil; ti = ts.Pop() {
+		t := ti.(string)
+		switch {
+		case strings.Contains(operators, t):
+			// operators
+			if postfix {
+				right := newTs.Pop()
+				left := newTs.Pop()
+				r, err := eval(t, left.(string), right.(string))
+				if left == nil || right == nil || err != nil {
+					return "", errors.New(fmt.Sprint("Failed to evaluate:", left, t, right))
+				}
+				newTs.Push(r)
+			} else {
+				right := ts.Pop()
+				left := ts.Pop()
+				r, err := eval(t, left.(string), right.(string))
+				if left == nil || right == nil || err != nil {
+					return "", errors.New(fmt.Sprint("Failed to evaluate:", left, t, right))
+				}
+				newTs.Push(r)
+			}
+		default:
+			// operands
+			newTs.Push(t)
+		}
+		//newTs.Print()
+	}
+	if newTs.Len() == 1 {
+		return newTs.Pop().(string), nil
+	} else {
+		Calculate(newTs, !postfix)
+	}
+	return "", errors.New("Error")
 }
 
 // false o1 in first, true o2 out first
@@ -51,7 +172,7 @@ func shunt(o1, o2 string) (bool, error) {
 	return false, nil
 }
 
-func ParseRPN(tokens []string) (isDec bool, output Lifo, err error) {
+func ParseRPN(tokens []string) (isDec bool, output *Lifo, err error) {
 	opStack := &Lifo{}
 	outputQueue := []string{}
 	for _, token := range tokens {
@@ -91,13 +212,14 @@ func ParseRPN(tokens []string) (isDec bool, output Lifo, err error) {
 				}
 			}
 		}
-		fmt.Println(token, outputQueue)
 	}
 	for o2 := opStack.Pop(); o2 != nil; o2 = opStack.Pop() {
 		outputQueue = append(outputQueue, o2.(string))
 	}
-	for _, v := range outputQueue {
-		output.Push(v)
+	//fmt.Println(outputQueue)
+	output = &Lifo{}
+	for i := 0; i < len(outputQueue); i++ {
+		(*output).Push(outputQueue[len(outputQueue)-i-1])
 	}
 	return
 }
@@ -175,9 +297,16 @@ func Tokenize(exp string) (tokens []string) {
 					tokens = append(tokens, tmp)
 					tmp = ""
 				}
-				l = false
-				n = false
-				tokens = append(tokens, s)
+				if (s == "+" || s == "-") && !n && (len(tokens) == 0 || tokens[len(tokens)-1] != ")") {
+					l = false
+					n = true
+					tmp += s
+				} else {
+					l = false
+					n = false
+					tokens = append(tokens, s)
+				}
+
 			}
 		default:
 			if sq || dq {
