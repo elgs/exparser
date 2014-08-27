@@ -9,33 +9,29 @@ import (
 	"unicode"
 )
 
-type opp struct {
+var operators = "+-*/%^"
+var parentheses = "()"
+
+type OpPrecedence struct {
 	op            string
 	precedence    uint8
 	associativity bool `false: left, true: right`
 }
 
-var operators = "+-*/%^"
-var parentheses = "()"
-var operatorPrecedence = []opp{
-	{"+", 2, false},
-	{"-", 2, false},
-	{"*", 3, false},
-	{"/", 3, false},
-	{"%", 3, false},
-	{"^", 4, true},
+type Parser struct {
+	Opps []OpPrecedence
 }
 
-func Evaluate(expression string) (string, error) {
-	tokens := Tokenize(expression)
-	_, rpn, err := ParseRPN(tokens)
+func (this *Parser) Evaluate(expression string) (string, error) {
+	tokens := this.Tokenize(expression)
+	_, rpn, err := this.ParseRPN(tokens)
 	if err != nil {
 		return "", err
 	}
-	return Calculate(rpn, true)
+	return this.Calculate(rpn, true)
 }
 
-func eval(op string, left string, right string) (string, error) {
+func (this *Parser) eval(op string, left string, right string) (string, error) {
 	isDec := strings.Contains(left, ".") || strings.Contains(right, ".") || op == "/"
 	switch op {
 	case "+":
@@ -107,7 +103,7 @@ func eval(op string, left string, right string) (string, error) {
 	return "", errors.New(fmt.Sprint("Failed to evaluate:", left, op, right))
 }
 
-func Calculate(ts *Lifo, postfix bool) (string, error) {
+func (this *Parser) Calculate(ts *Lifo, postfix bool) (string, error) {
 	newTs := &Lifo{}
 	for ti := ts.Pop(); ti != nil; ti = ts.Pop() {
 		t := ti.(string)
@@ -117,7 +113,7 @@ func Calculate(ts *Lifo, postfix bool) (string, error) {
 			if postfix {
 				right := newTs.Pop()
 				left := newTs.Pop()
-				r, err := eval(t, left.(string), right.(string))
+				r, err := this.eval(t, left.(string), right.(string))
 				if left == nil || right == nil || err != nil {
 					return "", errors.New(fmt.Sprint("Failed to evaluate:", left, t, right))
 				}
@@ -125,7 +121,7 @@ func Calculate(ts *Lifo, postfix bool) (string, error) {
 			} else {
 				right := ts.Pop()
 				left := ts.Pop()
-				r, err := eval(t, left.(string), right.(string))
+				r, err := this.eval(t, left.(string), right.(string))
 				if left == nil || right == nil || err != nil {
 					return "", errors.New(fmt.Sprint("Failed to evaluate:", left, t, right))
 				}
@@ -140,17 +136,17 @@ func Calculate(ts *Lifo, postfix bool) (string, error) {
 	if newTs.Len() == 1 {
 		return newTs.Pop().(string), nil
 	} else {
-		Calculate(newTs, !postfix)
+		this.Calculate(newTs, !postfix)
 	}
 	return "", errors.New("Error")
 }
 
 // false o1 in first, true o2 out first
-func shunt(o1, o2 string) (bool, error) {
+func (this *Parser) shunt(o1, o2 string) (bool, error) {
 	op1Valid, op2Valid := false, false
-	var op1 opp
-	var op2 opp
-	for _, v := range operatorPrecedence {
+	var op1 OpPrecedence
+	var op2 OpPrecedence
+	for _, v := range this.Opps {
 		if v.op == o1 {
 			op1 = v
 			op1Valid = true
@@ -172,7 +168,7 @@ func shunt(o1, o2 string) (bool, error) {
 	return false, nil
 }
 
-func ParseRPN(tokens []string) (isDec bool, output *Lifo, err error) {
+func (this *Parser) ParseRPN(tokens []string) (isDec bool, output *Lifo, err error) {
 	opStack := &Lifo{}
 	outputQueue := []string{}
 	for _, token := range tokens {
@@ -191,7 +187,7 @@ func ParseRPN(tokens []string) (isDec bool, output *Lifo, err error) {
 				if !strings.Contains(operators, stackToken) {
 					break
 				}
-				o2First, err := shunt(token, stackToken)
+				o2First, err := this.shunt(token, stackToken)
 				if err != nil {
 					return isDec, output, err
 				}
@@ -224,7 +220,7 @@ func ParseRPN(tokens []string) (isDec bool, output *Lifo, err error) {
 	return
 }
 
-func Tokenize(exp string) (tokens []string) {
+func (this *Parser) Tokenize(exp string) (tokens []string) {
 	sq, dq, l, n := false, false, false, false
 	var tmp string
 	for _, v := range exp {

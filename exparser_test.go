@@ -2,11 +2,18 @@
 package exparser
 
 import (
-	"fmt"
 	"testing"
 )
 
 func TestTokenize(t *testing.T) {
+	var opPrecedences = []OpPrecedence{
+		{"+", 2, false},
+		{"-", 2, false},
+		{"*", 3, false},
+		{"/", 3, false},
+		{"%", 3, false},
+		{"^", 4, true},
+	}
 	var pass = []struct {
 		in string
 		ex []string
@@ -23,14 +30,17 @@ func TestTokenize(t *testing.T) {
 		in string
 		ex []string
 	}{}
+	parser := &Parser{
+		Opps: opPrecedences,
+	}
 	for _, v := range pass {
-		tokens := Tokenize(v.in)
+		tokens := parser.Tokenize(v.in)
 		if !CompareSlices(tokens, v.ex) {
 			t.Error("Expected:", v.ex, "actual:", tokens)
 		}
 	}
 	for _, v := range fail {
-		tokens := Tokenize(v.in)
+		tokens := parser.Tokenize(v.in)
 		if CompareSlices(tokens, v.ex) {
 			t.Error("Expected:", v.ex, "actual:", tokens)
 		}
@@ -38,34 +48,41 @@ func TestTokenize(t *testing.T) {
 }
 
 func TestEvaluate(t *testing.T) {
+	var opPrecedences = []OpPrecedence{
+		{"+", 2, false},
+		{"-", 2, false},
+		{"*", 3, false},
+		{"/", 3, false},
+		{"%", 3, false},
+		{"^", 4, true},
+	}
 	var pass = []struct {
 		in string
 		ex string
 	}{
-		//{"-1 + 2^3 + (-1 + 2^3) + (-1 + 2^3)", "3"},
-		//{"1.2+2", "3.2"},
-		//{"1+2+(3*4)*5", ""},
-		//{"1+2+(3*4)^3", ""},
-		//{"2^3^3", ""},
-		{"3 ^4", ""},
-		//{"3 + 4 * 2 / ( 1-5 ) ^ 2 ^ 3", ""},
+		{"-1 + 2^3 + (-1 + 2^3) + (-1 + 2^3)", "21"},
+		{"1.2+2", "3.2"},
+		{"1+2+(3*4)*5", "63"},
+		{"1+2+(3*4)^3", "1731"},
+		{"2^3^3", "134217728"},
+		{"3 ^4", "81"},
+		{"3 + 4 * 2 / ( 1-5 ) ^ 2 ^ 3", "3.0001220703125"},
 	}
 	var fail = []struct {
 		in string
 		ex string
 	}{}
+	parser := &Parser{
+		Opps: opPrecedences,
+	}
 	for _, v := range pass {
-		//tokens := Tokenize(v.in)
-		//_, output, err := ParseRPN(tokens)
-		//if err != nil {
-		//	fmt.Println(err)
-		//}
-		////fmt.Println("isDec:", isDec)
-		//for o := output.Pop(); o != nil; o = output.Pop() {
-		//	//fmt.Print(o.(string), ", ")
-		//}
-		////fmt.Println()
-		fmt.Println(Evaluate(v.in))
+		r, err := parser.Evaluate(v.in)
+		if err != nil {
+			t.Error(err.Error())
+		}
+		if r != v.ex {
+			t.Error("Expected:", v.ex, "actual:", r)
+		}
 	}
 	for _, _ = range fail {
 
