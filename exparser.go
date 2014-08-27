@@ -24,7 +24,8 @@ var operatorPrecedence = []opp{
 	{"^", 4, true},
 }
 
-func shunt(o1, o2 string) (string, error) {
+// false o1 in first, true o2 out first
+func shunt(o1, o2 string) (bool, error) {
 	op1Valid, op2Valid := false, false
 	var op1 opp
 	var op2 opp
@@ -42,44 +43,61 @@ func shunt(o1, o2 string) (string, error) {
 		}
 	}
 	if !op1Valid || !op2Valid {
-		return "", errors.New(fmt.Sprint("Invalid operators:", o1, o2))
+		return false, errors.New(fmt.Sprint("Invalid operators:", o1, o2))
 	}
 	if op1.precedence < op2.precedence || op1.precedence == op2.precedence && !op1.associativity {
-		return op2.op, nil
+		return true, nil
 	}
-	return op1.op, nil
+	return false, nil
 }
 
 func ParseRPN(tokens []string) (isDec bool, output Lifo, err error) {
 	opStack := &Lifo{}
-	outputQueu := []string{}
+	outputQueue := []string{}
 	for _, token := range tokens {
 		_, err := strconv.ParseFloat(token, 64)
-		isNum := err != nil
+		isNum := err == nil
 		switch {
 		case isNum:
 			if strings.Contains(token, ".") {
 				isDec = true
 			}
-			outputQueu = append(outputQueu, token)
+			outputQueue = append(outputQueue, token)
 		case strings.Contains(operators, token):
 			// operator
-			o2 := opStack.Peep()
-			for o2 != nil {
+			for o2 := opStack.Peep(); o2 != nil; o2 = opStack.Peep() {
 				stackToken := o2.(string)
-				op, err := shunt(token, stackToken)
+				if !strings.Contains(operators, stackToken) {
+					break
+				}
+				o2First, err := shunt(token, stackToken)
 				if err != nil {
 					return isDec, output, err
 				}
-				if op == stackToken {
-					outputQueu = append(outputQueu, opStack.Pop().(string))
+				if o2First {
+					outputQueue = append(outputQueue, opStack.Pop().(string))
+				} else {
+					break
 				}
-				o2 = opStack.Peep()
 			}
 			opStack.Push(token)
 		case strings.Contains(parentheses, token):
 			// parentheses
+			if token == "(" {
+				opStack.Push(token)
+			} else if token == ")" {
+				for o2 := opStack.Pop(); o2 != nil && o2.(string) != "("; o2 = opStack.Pop() {
+					outputQueue = append(outputQueue, o2.(string))
+				}
+			}
 		}
+		fmt.Println(token, outputQueue)
+	}
+	for o2 := opStack.Pop(); o2 != nil; o2 = opStack.Pop() {
+		outputQueue = append(outputQueue, o2.(string))
+	}
+	for _, v := range outputQueue {
+		output.Push(v)
 	}
 	return
 }
