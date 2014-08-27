@@ -12,7 +12,8 @@ import (
 var parentheses = "()"
 
 type Parser struct {
-	Opps map[string]int
+	Operators map[string]int
+	Keywords  []string
 }
 
 func (this *Parser) Evaluate(expression string) (string, error) {
@@ -101,7 +102,7 @@ func (this *Parser) Calculate(ts *Lifo, postfix bool) (string, error) {
 	for ti := ts.Pop(); ti != nil; ti = ts.Pop() {
 		t := ti.(string)
 		switch {
-		case this.Opps[t] > 0:
+		case this.Operators[t] > 0:
 			// operators
 			if postfix {
 				right := newTs.Pop()
@@ -136,8 +137,8 @@ func (this *Parser) Calculate(ts *Lifo, postfix bool) (string, error) {
 
 // false o1 in first, true o2 out first
 func (this *Parser) shunt(o1, o2 string) (bool, error) {
-	op1 := this.Opps[o1]
-	op2 := this.Opps[o2]
+	op1 := this.Operators[o1]
+	op2 := this.Operators[o2]
 	if op1 == 0 || op2 == 0 {
 		return false, errors.New(fmt.Sprint("Invalid operators:", o1, o2))
 	}
@@ -159,11 +160,11 @@ func (this *Parser) ParseRPN(tokens []string) (isDec bool, output *Lifo, err err
 				isDec = true
 			}
 			outputQueue = append(outputQueue, token)
-		case this.Opps[token] > 0:
+		case this.Operators[token] > 0:
 			// operator
 			for o2 := opStack.Peep(); o2 != nil; o2 = opStack.Peep() {
 				stackToken := o2.(string)
-				if this.Opps[stackToken] == 0 {
+				if this.Operators[stackToken] == 0 {
 					break
 				}
 				o2First, err := this.shunt(token, stackToken)
@@ -177,15 +178,13 @@ func (this *Parser) ParseRPN(tokens []string) (isDec bool, output *Lifo, err err
 				}
 			}
 			opStack.Push(token)
-		case strings.Contains(parentheses, token):
-			// parentheses
-			if token == "(" {
-				opStack.Push(token)
-			} else if token == ")" {
-				for o2 := opStack.Pop(); o2 != nil && o2.(string) != "("; o2 = opStack.Pop() {
-					outputQueue = append(outputQueue, o2.(string))
-				}
+		case token == "(":
+			opStack.Push(token)
+		case token == ")":
+			for o2 := opStack.Pop(); o2 != nil && o2.(string) != "("; o2 = opStack.Pop() {
+				outputQueue = append(outputQueue, o2.(string))
 			}
+
 		}
 	}
 	for o2 := opStack.Pop(); o2 != nil; o2 = opStack.Pop() {
@@ -264,7 +263,7 @@ func (this *Parser) Tokenize(exp string) (tokens []string) {
 					n = false
 				}
 			}
-		case this.Opps[s] > 0 || strings.ContainsRune(parentheses, v):
+		case this.Operators[s] > 0 || strings.ContainsRune(parentheses, v):
 			if sq || dq {
 				tmp += s
 			} else {

@@ -31,7 +31,7 @@ func TestTokenize(t *testing.T) {
 		ex []string
 	}{}
 	parser := &Parser{
-		Opps: opPrecedences,
+		Operators: opPrecedences,
 	}
 	for _, v := range pass {
 		tokens := parser.Tokenize(v.in)
@@ -73,7 +73,7 @@ func TestEvaluate(t *testing.T) {
 		ex string
 	}{}
 	parser := &Parser{
-		Opps: opPrecedences,
+		Operators: opPrecedences,
 	}
 	for _, v := range pass {
 		r, err := parser.Evaluate(v.in)
@@ -109,7 +109,7 @@ func xTestTokenizeFilters(t *testing.T) {
 		ex []string
 	}{}
 	parser := &Parser{
-		Opps: opPrecedences,
+		Operators: opPrecedences,
 	}
 	for _, v := range pass {
 		tokens := parser.Tokenize(v.in)
