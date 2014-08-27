@@ -6,13 +6,13 @@ import (
 )
 
 func TestTokenize(t *testing.T) {
-	var opPrecedences = []OpPrecedence{
-		{"+", 2, false},
-		{"-", 2, false},
-		{"*", 3, false},
-		{"/", 3, false},
-		{"%", 3, false},
-		{"^", 4, true},
+	opPrecedences := map[string]int{
+		"+": 1,
+		"-": 1,
+		"*": 3,
+		"/": 3,
+		"%": 3,
+		"^": 4,
 	}
 	var pass = []struct {
 		in string
@@ -48,13 +48,13 @@ func TestTokenize(t *testing.T) {
 }
 
 func TestEvaluate(t *testing.T) {
-	var opPrecedences = []OpPrecedence{
-		{"+", 2, false},
-		{"-", 2, false},
-		{"*", 3, false},
-		{"/", 3, false},
-		{"%", 3, false},
-		{"^", 4, true},
+	opPrecedences := map[string]int{
+		"+": 1,
+		"-": 1,
+		"*": 3,
+		"/": 3,
+		"%": 3,
+		"^": 4,
 	}
 	var pass = []struct {
 		in string
@@ -82,6 +82,39 @@ func TestEvaluate(t *testing.T) {
 		}
 		if r != v.ex {
 			t.Error("Expected:", v.ex, "actual:", r)
+		}
+	}
+	for _, _ = range fail {
+
+	}
+}
+
+func xTestTokenizeFilters(t *testing.T) {
+	opPrecedences := map[string]int{
+		"=":  1,
+		"!=": 1,
+		">":  1,
+		"<":  1,
+		">=": 1,
+		"<=": 1,
+	}
+	var pass = []struct {
+		in string
+		ex []string
+	}{
+		{"A!='ABC'", []string{"A", "!=", "ABC"}},
+	}
+	var fail = []struct {
+		in string
+		ex []string
+	}{}
+	parser := &Parser{
+		Opps: opPrecedences,
+	}
+	for _, v := range pass {
+		tokens := parser.Tokenize(v.in)
+		if !CompareSlices(tokens, v.ex) {
+			t.Error("Expected:", v.ex, "actual:", tokens)
 		}
 	}
 	for _, _ = range fail {

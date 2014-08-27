@@ -9,17 +9,10 @@ import (
 	"unicode"
 )
 
-var operators = "+-*/%^"
 var parentheses = "()"
 
-type OpPrecedence struct {
-	op            string
-	precedence    uint8
-	associativity bool `false: left, true: right`
-}
-
 type Parser struct {
-	Opps []OpPrecedence
+	Opps map[string]int
 }
 
 func (this *Parser) Evaluate(expression string) (string, error) {
@@ -108,7 +101,7 @@ func (this *Parser) Calculate(ts *Lifo, postfix bool) (string, error) {
 	for ti := ts.Pop(); ti != nil; ti = ts.Pop() {
 		t := ti.(string)
 		switch {
-		case strings.Contains(operators, t):
+		case this.Opps[t] > 0:
 			// operators
 			if postfix {
 				right := newTs.Pop()
@@ -143,26 +136,12 @@ func (this *Parser) Calculate(ts *Lifo, postfix bool) (string, error) {
 
 // false o1 in first, true o2 out first
 func (this *Parser) shunt(o1, o2 string) (bool, error) {
-	op1Valid, op2Valid := false, false
-	var op1 OpPrecedence
-	var op2 OpPrecedence
-	for _, v := range this.Opps {
-		if v.op == o1 {
-			op1 = v
-			op1Valid = true
-		}
-		if v.op == o2 {
-			op2 = v
-			op2Valid = true
-		}
-		if op1Valid && op2Valid {
-			break
-		}
-	}
-	if !op1Valid || !op2Valid {
+	op1 := this.Opps[o1]
+	op2 := this.Opps[o2]
+	if op1 == 0 || op2 == 0 {
 		return false, errors.New(fmt.Sprint("Invalid operators:", o1, o2))
 	}
-	if op1.precedence < op2.precedence || op1.precedence == op2.precedence && !op1.associativity {
+	if op1 < op2 || op1 == op2 && op1%2 == 1 {
 		return true, nil
 	}
 	return false, nil
@@ -180,11 +159,11 @@ func (this *Parser) ParseRPN(tokens []string) (isDec bool, output *Lifo, err err
 				isDec = true
 			}
 			outputQueue = append(outputQueue, token)
-		case strings.Contains(operators, token):
+		case this.Opps[token] > 0:
 			// operator
 			for o2 := opStack.Peep(); o2 != nil; o2 = opStack.Peep() {
 				stackToken := o2.(string)
-				if !strings.Contains(operators, stackToken) {
+				if this.Opps[stackToken] == 0 {
 					break
 				}
 				o2First, err := this.shunt(token, stackToken)
@@ -285,7 +264,7 @@ func (this *Parser) Tokenize(exp string) (tokens []string) {
 					n = false
 				}
 			}
-		case strings.ContainsRune(operators, v) || strings.ContainsRune(parentheses, v):
+		case this.Opps[s] > 0 || strings.ContainsRune(parentheses, v):
 			if sq || dq {
 				tmp += s
 			} else {
