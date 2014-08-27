@@ -1,6 +1,6 @@
 package exparser
 
-type Stack struct {
+type Lifo struct {
 	top  *Element
 	size int
 }
@@ -10,19 +10,27 @@ type Element struct {
 	next  *Element
 }
 
-func (s *Stack) Len() int {
+func (s *Lifo) Len() int {
 	return s.size
 }
 
-func (s *Stack) Push(value interface{}) {
+func (s *Lifo) Push(value interface{}) {
 	s.top = &Element{value, s.top}
 	s.size++
 }
 
-func (s *Stack) Pop() (value interface{}) {
+func (s *Lifo) Pop() (value interface{}) {
 	if s.size > 0 {
 		value, s.top = s.top.value, s.top.next
 		s.size--
+		return
+	}
+	return nil
+}
+
+func (s *Lifo) Peep() (value interface{}) {
+	if s.size > 0 {
+		value = s.top.value
 		return
 	}
 	return nil
