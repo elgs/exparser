@@ -9,8 +9,6 @@ import (
 	"unicode"
 )
 
-var parentheses = "()"
-
 type Parser struct {
 	Operators map[string]int
 	Keywords  []string
@@ -263,7 +261,7 @@ func (this *Parser) Tokenize(exp string) (tokens []string) {
 					n = false
 				}
 			}
-		case this.Operators[s] > 0 || strings.ContainsRune(parentheses, v):
+		case this.Operators[s] > 0 || s == "(" || s == ")":
 			if sq || dq {
 				tmp += s
 			} else {
