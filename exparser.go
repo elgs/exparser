@@ -16,6 +16,7 @@ type Parser struct {
 
 func (this *Parser) Evaluate(expression string) (string, error) {
 	tokens := this.Tokenize(expression)
+	//fmt.Println(tokens)
 	_, rpn, err := this.ParseRPN(tokens)
 	if err != nil {
 		return "", err
@@ -197,31 +198,13 @@ func (this *Parser) ParseRPN(tokens []string) (isDec bool, output *Lifo, err err
 }
 
 func (this *Parser) Tokenize(exp string) (tokens []string) {
-	sq, dq, l, n := false, false, false, false
+	sq, dq := false, false
 	var tmp string
-	for _, v := range exp {
+	expRunes := []rune(exp)
+	for i := 0; i < len(expRunes); i++ {
+		v := expRunes[i]
 		s := string(v)
 		switch {
-		case unicode.IsNumber(v) || s == ".":
-			if !sq && !dq {
-				if !n && len(tmp) > 0 {
-					tokens = append(tokens, tmp)
-					tmp = ""
-				}
-				l = false
-				n = true
-			}
-			tmp += s
-		case unicode.IsLetter(v):
-			if !sq && !dq {
-				if !l && len(tmp) > 0 {
-					tokens = append(tokens, tmp)
-					tmp = ""
-				}
-				l = true
-				n = false
-			}
-			tmp += s
 		case unicode.IsSpace(v):
 			if sq || dq {
 				tmp += s
@@ -230,8 +213,6 @@ func (this *Parser) Tokenize(exp string) (tokens []string) {
 					tokens = append(tokens, tmp)
 					tmp = ""
 				}
-				l = false
-				n = false
 			}
 		case s == "'":
 			if dq {
@@ -243,8 +224,6 @@ func (this *Parser) Tokenize(exp string) (tokens []string) {
 						tokens = append(tokens, tmp)
 						tmp = ""
 					}
-					l = false
-					n = false
 				}
 			}
 		case s == "\"":
@@ -257,8 +236,6 @@ func (this *Parser) Tokenize(exp string) (tokens []string) {
 						tokens = append(tokens, tmp)
 						tmp = ""
 					}
-					l = false
-					n = false
 				}
 			}
 		case this.Operators[s] > 0 || s == "(" || s == ")":
@@ -269,28 +246,20 @@ func (this *Parser) Tokenize(exp string) (tokens []string) {
 					tokens = append(tokens, tmp)
 					tmp = ""
 				}
-				if (s == "+" || s == "-") && !n && (len(tokens) == 0 || tokens[len(tokens)-1] != ")") {
-					l = false
-					n = true
+				lastToken := ""
+				if len(tokens) > 0 {
+					lastToken = tokens[len(tokens)-1]
+				}
+				if (s == "+" || s == "-") && (len(tokens) == 0 || lastToken == "(" || this.Operators[lastToken] > 0) {
+					// sign
 					tmp += s
 				} else {
-					l = false
-					n = false
+					// operator
 					tokens = append(tokens, s)
 				}
-
 			}
 		default:
-			if sq || dq {
-				tmp += s
-			} else {
-				if len(tmp) > 0 {
-					tokens = append(tokens, tmp)
-					tmp = ""
-				}
-				l = false
-				n = false
-			}
+			tmp += s
 		}
 	}
 	if len(tmp) > 0 {
