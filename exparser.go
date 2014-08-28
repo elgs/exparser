@@ -3,17 +3,18 @@ package exparser
 import (
 	"errors"
 	"fmt"
-	"math"
-	"strconv"
-	"strings"
 	"unicode"
 )
 
+type Operator struct {
+	Precedence int
+	Eval       func(op string, left string, right string) (string, error)
+}
+
 type Parser struct {
-	Operators   map[string]int
+	Operators   map[string]*Operator
 	maxOpLen    int
 	initialized bool
-	Keywords    []string
 }
 
 func (this *Parser) Init() {
@@ -34,89 +35,17 @@ func (this *Parser) Calculate(expression string) (string, error) {
 	return this.Evaluate(rpn, true)
 }
 
-func (this *Parser) eval(op string, left string, right string) (string, error) {
-	isDec := strings.Contains(left, ".") || strings.Contains(right, ".") || op == "/"
-	switch op {
-	case "+":
-		if isDec {
-			l, err := strconv.ParseFloat(left, 64)
-			r, err := strconv.ParseFloat(right, 64)
-			return fmt.Sprint(l + r), err
-		} else {
-			l, err := strconv.ParseInt(left, 10, 64)
-			r, err := strconv.ParseInt(right, 10, 64)
-			return fmt.Sprint(l + r), err
-		}
-	case "-":
-		if isDec {
-			l, err := strconv.ParseFloat(left, 64)
-			r, err := strconv.ParseFloat(right, 64)
-			return fmt.Sprint(l - r), err
-		} else {
-			l, err := strconv.ParseInt(left, 10, 64)
-			r, err := strconv.ParseInt(right, 10, 64)
-			return fmt.Sprint(l - r), err
-		}
-	case "*":
-		if isDec {
-			l, err := strconv.ParseFloat(left, 64)
-			r, err := strconv.ParseFloat(right, 64)
-			return fmt.Sprint(l * r), err
-		} else {
-			l, err := strconv.ParseInt(left, 10, 64)
-			r, err := strconv.ParseInt(right, 10, 64)
-			return fmt.Sprint(l * r), err
-		}
-	case "/":
-		if isDec {
-			l, err := strconv.ParseFloat(left, 64)
-			r, err := strconv.ParseFloat(right, 64)
-			if r == 0 {
-				return "", errors.New(fmt.Sprint("Failed to evaluate:", left, op, right))
-			}
-			return fmt.Sprint(l / r), err
-		} else {
-			l, err := strconv.ParseInt(left, 10, 64)
-			r, err := strconv.ParseInt(right, 10, 64)
-			if r == 0 {
-				return "", errors.New(fmt.Sprint("Failed to evaluate:", left, op, right))
-			}
-			return fmt.Sprint(l / r), err
-		}
-	case "%":
-		if isDec {
-			return "", errors.New(fmt.Sprint("Failed to evaluate:", left, op, right))
-		} else {
-			l, err := strconv.ParseInt(left, 10, 64)
-			r, err := strconv.ParseInt(right, 10, 64)
-			if r == 0 {
-				return "", errors.New(fmt.Sprint("Failed to evaluate:", left, op, right))
-			}
-			return fmt.Sprint(l % r), err
-		}
-	case "^":
-		l, err := strconv.ParseFloat(left, 64)
-		r, err := strconv.ParseFloat(right, 64)
-		if isDec {
-			return fmt.Sprint(math.Pow(l, r)), err
-		} else {
-			return fmt.Sprint(int64(math.Pow(l, r))), err
-		}
-	}
-	return "", errors.New(fmt.Sprint("Failed to evaluate:", left, op, right))
-}
-
 func (this *Parser) Evaluate(ts *Lifo, postfix bool) (string, error) {
 	newTs := &Lifo{}
 	for ti := ts.Pop(); ti != nil; ti = ts.Pop() {
 		t := ti.(string)
 		switch {
-		case this.Operators[t] > 0:
+		case this.Operators[t] != nil:
 			// operators
 			if postfix {
 				right := newTs.Pop()
 				left := newTs.Pop()
-				r, err := this.eval(t, left.(string), right.(string))
+				r, err := this.Operators[t].Eval(t, left.(string), right.(string))
 				if left == nil || right == nil || err != nil {
 					return "", errors.New(fmt.Sprint("Failed to evaluate:", left, t, right))
 				}
@@ -124,7 +53,7 @@ func (this *Parser) Evaluate(ts *Lifo, postfix bool) (string, error) {
 			} else {
 				right := ts.Pop()
 				left := ts.Pop()
-				r, err := this.eval(t, left.(string), right.(string))
+				r, err := this.Operators[t].Eval(t, left.(string), right.(string))
 				if left == nil || right == nil || err != nil {
 					return "", errors.New(fmt.Sprint("Failed to evaluate:", left, t, right))
 				}
@@ -148,10 +77,10 @@ func (this *Parser) Evaluate(ts *Lifo, postfix bool) (string, error) {
 func (this *Parser) shunt(o1, o2 string) (bool, error) {
 	op1 := this.Operators[o1]
 	op2 := this.Operators[o2]
-	if op1 == 0 || op2 == 0 {
+	if op1 == nil || op2 == nil {
 		return false, errors.New(fmt.Sprint("Invalid operators:", o1, o2))
 	}
-	if op1 < op2 || op1 == op2 && op1%2 == 1 {
+	if op1.Precedence < op2.Precedence || op1.Precedence == op2.Precedence && op1.Precedence%2 == 1 {
 		return true, nil
 	}
 	return false, nil
@@ -162,11 +91,11 @@ func (this *Parser) ParseRPN(tokens []string) (output *Lifo, err error) {
 	outputQueue := []string{}
 	for _, token := range tokens {
 		switch {
-		case this.Operators[token] > 0:
+		case this.Operators[token] != nil:
 			// operator
 			for o2 := opStack.Peep(); o2 != nil; o2 = opStack.Peep() {
 				stackToken := o2.(string)
-				if this.Operators[stackToken] == 0 {
+				if this.Operators[stackToken] == nil {
 					break
 				}
 				o2First, err := this.shunt(token, stackToken)
@@ -257,7 +186,7 @@ func (this *Parser) Tokenize(exp string) (tokens []string) {
 				if len(tokens) > 0 {
 					lastToken = tokens[len(tokens)-1]
 				}
-				if (s == "+" || s == "-") && (len(tokens) == 0 || lastToken == "(" || this.Operators[lastToken] > 0) {
+				if (s == "+" || s == "-") && (len(tokens) == 0 || lastToken == "(" || this.Operators[lastToken] != nil) {
 					// sign
 					tmp += s
 				} else {
@@ -275,7 +204,7 @@ func (this *Parser) Tokenize(exp string) (tokens []string) {
 				for j := 0; j < this.maxOpLen && i < len(expRunes)-1; j++ {
 					next := string(expRunes[i+j])
 					opCandidateTmp += next
-					if this.Operators[opCandidateTmp] > 0 {
+					if this.Operators[opCandidateTmp] != nil {
 						opCandidate = opCandidateTmp
 					}
 				}

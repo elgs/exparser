@@ -6,14 +6,7 @@ import (
 )
 
 func TestTokenize(t *testing.T) {
-	operators := map[string]int{
-		"+": 1,
-		"-": 1,
-		"*": 3,
-		"/": 3,
-		"%": 3,
-		"^": 4,
-	}
+
 	var pass = []struct {
 		in string
 		ex []string
@@ -31,7 +24,7 @@ func TestTokenize(t *testing.T) {
 		ex []string
 	}{}
 	parser := &Parser{
-		Operators: operators,
+		Operators: calcOperators,
 	}
 	for _, v := range pass {
 		tokens := parser.Tokenize(v.in)
@@ -48,14 +41,6 @@ func TestTokenize(t *testing.T) {
 }
 
 func TestEvaluate(t *testing.T) {
-	operators := map[string]int{
-		"+": 1,
-		"-": 1,
-		"*": 3,
-		"/": 3,
-		"%": 3,
-		"^": 4,
-	}
 	var pass = []struct {
 		in string
 		ex string
@@ -73,7 +58,7 @@ func TestEvaluate(t *testing.T) {
 		ex string
 	}{}
 	parser := &Parser{
-		Operators: operators,
+		Operators: calcOperators,
 	}
 	for _, v := range pass {
 		r, err := parser.Calculate(v.in)
@@ -90,21 +75,6 @@ func TestEvaluate(t *testing.T) {
 }
 
 func TestTokenizeFilters(t *testing.T) {
-	operators := map[string]int{
-		":or:": 10,
-		":nd:": 10,
-		":eq:": 20,
-		":ne:": 20,
-		":gt:": 20,
-		":lt:": 20,
-		":ge:": 20,
-		":le:": 20,
-		":li:": 20,
-		":nl:": 20,
-		":nu:": 20,
-		":nn:": 20,
-		":rl:": 20,
-	}
 	var pass = []struct {
 		in string
 		ex []string
@@ -116,7 +86,7 @@ func TestTokenizeFilters(t *testing.T) {
 		ex []string
 	}{}
 	parser := &Parser{
-		Operators: operators,
+		Operators: mysqlOperators,
 	}
 	for _, v := range pass {
 		tokens := parser.Tokenize(v.in)
