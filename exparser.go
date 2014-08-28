@@ -11,12 +11,21 @@ import (
 
 type Parser struct {
 	Operators map[string]int
+	maxOpLen  int
 	Keywords  []string
+}
+
+func (this *Parser) Init() {
+	for k, _ := range this.Operators {
+		if len(k) > this.maxOpLen {
+			this.maxOpLen = len(k)
+		}
+	}
 }
 
 func (this *Parser) Evaluate(expression string) (string, error) {
 	tokens := this.Tokenize(expression)
-	//fmt.Println(tokens)
+	//fmt.Println(expression, tokens)
 	_, rpn, err := this.ParseRPN(tokens)
 	if err != nil {
 		return "", err
@@ -238,7 +247,7 @@ func (this *Parser) Tokenize(exp string) (tokens []string) {
 					}
 				}
 			}
-		case this.Operators[s] > 0 || s == "(" || s == ")":
+		case s == "+" || s == "-" || s == "(" || s == ")":
 			if sq || dq {
 				tmp += s
 			} else {
@@ -259,7 +268,30 @@ func (this *Parser) Tokenize(exp string) (tokens []string) {
 				}
 			}
 		default:
-			tmp += s
+			if sq || dq {
+				tmp += s
+			} else {
+				// until the max length of operators(n), check if next 1..n runes are operator, greedily
+				opCandidateTmp := ""
+				opCandidate := ""
+				for j := 0; j < this.maxOpLen && i < len(expRunes)-1; j++ {
+					next := string(expRunes[i+j])
+					opCandidateTmp += next
+					if this.Operators[opCandidateTmp] > 0 {
+						opCandidate = opCandidateTmp
+					}
+				}
+				if len(opCandidate) > 0 {
+					if len(tmp) > 0 {
+						tokens = append(tokens, tmp)
+						tmp = ""
+					}
+					tokens = append(tokens, opCandidate)
+					i += len(opCandidate) - 1
+				} else {
+					tmp += s
+				}
+			}
 		}
 	}
 	if len(tmp) > 0 {

@@ -6,7 +6,7 @@ import (
 )
 
 func TestTokenize(t *testing.T) {
-	opPrecedences := map[string]int{
+	operators := map[string]int{
 		"+": 1,
 		"-": 1,
 		"*": 3,
@@ -19,7 +19,7 @@ func TestTokenize(t *testing.T) {
 		ex []string
 	}{
 		{"-1 + 2", []string{"-1", "+", "2"}},
-		{"+1 +2", []string{"+1", "+", "2"}},
+		{"+1+2", []string{"+1", "+", "2"}},
 		{"1+2+(3*4)", []string{"1", "+", "2", "+", "(", "3", "*", "4", ")"}},
 		{"1+2+(3*4)^34", []string{"1", "+", "2", "+", "(", "3", "*", "4", ")", "^", "34"}},
 		{"'123  456' 789", []string{"123  456", "789"}},
@@ -31,12 +31,13 @@ func TestTokenize(t *testing.T) {
 		ex []string
 	}{}
 	parser := &Parser{
-		Operators: opPrecedences,
+		Operators: operators,
 	}
+	parser.Init()
 	for _, v := range pass {
 		tokens := parser.Tokenize(v.in)
 		if !CompareSlices(tokens, v.ex) {
-			t.Error("Expected:", v.ex, "actual:", tokens)
+			t.Error("Expected:", v.ex, len(v.ex), "actual:", tokens, len(tokens))
 		}
 	}
 	for _, v := range fail {
@@ -48,7 +49,7 @@ func TestTokenize(t *testing.T) {
 }
 
 func TestEvaluate(t *testing.T) {
-	opPrecedences := map[string]int{
+	operators := map[string]int{
 		"+": 1,
 		"-": 1,
 		"*": 3,
@@ -73,8 +74,9 @@ func TestEvaluate(t *testing.T) {
 		ex string
 	}{}
 	parser := &Parser{
-		Operators: opPrecedences,
+		Operators: operators,
 	}
+	parser.Init()
 	for _, v := range pass {
 		r, err := parser.Evaluate(v.in)
 		if err != nil {
@@ -89,8 +91,8 @@ func TestEvaluate(t *testing.T) {
 	}
 }
 
-func xTestTokenizeFilters(t *testing.T) {
-	opPrecedences := map[string]int{
+func TestTokenizeFilters(t *testing.T) {
+	operators := map[string]int{
 		"=":  1,
 		"!=": 1,
 		">":  1,
@@ -116,8 +118,9 @@ func xTestTokenizeFilters(t *testing.T) {
 		ex []string
 	}{}
 	parser := &Parser{
-		Operators: opPrecedences,
+		Operators: operators,
 	}
+	parser.Init()
 	for _, v := range pass {
 		tokens := parser.Tokenize(v.in)
 		if !CompareSlices(tokens, v.ex) {
