@@ -217,7 +217,7 @@ func (this *Parser) Tokenize(exp string) (tokens []string) {
 				// until the max length of operators(n), check if next 1..n runes are operator, greedily
 				opCandidateTmp := ""
 				opCandidate := ""
-				for j := 0; j < this.maxOpLen && i < len(expRunes)-1; j++ {
+				for j := 0; j < this.maxOpLen && i < len(expRunes)-j-1; j++ {
 					next := string(expRunes[i+j])
 					opCandidateTmp += next
 					if this.Operators[opCandidateTmp] != nil {
