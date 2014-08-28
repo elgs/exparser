@@ -33,7 +33,6 @@ func TestTokenize(t *testing.T) {
 	parser := &Parser{
 		Operators: operators,
 	}
-	parser.Init()
 	for _, v := range pass {
 		tokens := parser.Tokenize(v.in)
 		if !CompareSlices(tokens, v.ex) {
@@ -76,7 +75,6 @@ func TestEvaluate(t *testing.T) {
 	parser := &Parser{
 		Operators: operators,
 	}
-	parser.Init()
 	for _, v := range pass {
 		r, err := parser.Evaluate(v.in)
 		if err != nil {
@@ -120,7 +118,6 @@ func TestTokenizeFilters(t *testing.T) {
 	parser := &Parser{
 		Operators: operators,
 	}
-	parser.Init()
 	for _, v := range pass {
 		tokens := parser.Tokenize(v.in)
 		if !CompareSlices(tokens, v.ex) {

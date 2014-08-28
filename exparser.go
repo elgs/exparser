@@ -10,9 +10,10 @@ import (
 )
 
 type Parser struct {
-	Operators map[string]int
-	maxOpLen  int
-	Keywords  []string
+	Operators   map[string]int
+	maxOpLen    int
+	initialized bool
+	Keywords    []string
 }
 
 func (this *Parser) Init() {
@@ -207,6 +208,9 @@ func (this *Parser) ParseRPN(tokens []string) (isDec bool, output *Lifo, err err
 }
 
 func (this *Parser) Tokenize(exp string) (tokens []string) {
+	if !this.initialized {
+		this.Init()
+	}
 	sq, dq := false, false
 	var tmp string
 	expRunes := []rune(exp)
