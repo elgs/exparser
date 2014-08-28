@@ -24,14 +24,14 @@ func (this *Parser) Init() {
 	}
 }
 
-func (this *Parser) Evaluate(expression string) (string, error) {
+func (this *Parser) Calculate(expression string) (string, error) {
 	tokens := this.Tokenize(expression)
 	//fmt.Println(expression, tokens)
-	_, rpn, err := this.ParseRPN(tokens)
+	rpn, err := this.ParseRPN(tokens)
 	if err != nil {
 		return "", err
 	}
-	return this.Calculate(rpn, true)
+	return this.Evaluate(rpn, true)
 }
 
 func (this *Parser) eval(op string, left string, right string) (string, error) {
@@ -106,7 +106,7 @@ func (this *Parser) eval(op string, left string, right string) (string, error) {
 	return "", errors.New(fmt.Sprint("Failed to evaluate:", left, op, right))
 }
 
-func (this *Parser) Calculate(ts *Lifo, postfix bool) (string, error) {
+func (this *Parser) Evaluate(ts *Lifo, postfix bool) (string, error) {
 	newTs := &Lifo{}
 	for ti := ts.Pop(); ti != nil; ti = ts.Pop() {
 		t := ti.(string)
@@ -139,7 +139,7 @@ func (this *Parser) Calculate(ts *Lifo, postfix bool) (string, error) {
 	if newTs.Len() == 1 {
 		return newTs.Pop().(string), nil
 	} else {
-		this.Calculate(newTs, !postfix)
+		this.Evaluate(newTs, !postfix)
 	}
 	return "", errors.New("Error")
 }
@@ -157,18 +157,11 @@ func (this *Parser) shunt(o1, o2 string) (bool, error) {
 	return false, nil
 }
 
-func (this *Parser) ParseRPN(tokens []string) (isDec bool, output *Lifo, err error) {
+func (this *Parser) ParseRPN(tokens []string) (output *Lifo, err error) {
 	opStack := &Lifo{}
 	outputQueue := []string{}
 	for _, token := range tokens {
-		_, err := strconv.ParseFloat(token, 64)
-		isNum := err == nil
 		switch {
-		case isNum:
-			if strings.Contains(token, ".") {
-				isDec = true
-			}
-			outputQueue = append(outputQueue, token)
 		case this.Operators[token] > 0:
 			// operator
 			for o2 := opStack.Peep(); o2 != nil; o2 = opStack.Peep() {
@@ -178,7 +171,7 @@ func (this *Parser) ParseRPN(tokens []string) (isDec bool, output *Lifo, err err
 				}
 				o2First, err := this.shunt(token, stackToken)
 				if err != nil {
-					return isDec, output, err
+					return output, err
 				}
 				if o2First {
 					outputQueue = append(outputQueue, opStack.Pop().(string))
@@ -193,7 +186,8 @@ func (this *Parser) ParseRPN(tokens []string) (isDec bool, output *Lifo, err err
 			for o2 := opStack.Pop(); o2 != nil && o2.(string) != "("; o2 = opStack.Pop() {
 				outputQueue = append(outputQueue, o2.(string))
 			}
-
+		default:
+			outputQueue = append(outputQueue, token)
 		}
 	}
 	for o2 := opStack.Pop(); o2 != nil; o2 = opStack.Pop() {

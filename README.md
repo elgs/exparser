@@ -14,7 +14,19 @@ import (
 
 func main() {
 	input := args()
-	r, err := exparser.Evaluate(input[0])
+	operators := map[string]int{
+		"+": 1,
+		"-": 1,
+		"*": 3,
+		"/": 3,
+		"%": 3,
+		"^": 4,
+	}
+	parser := &exparser.Parser{
+		Operators: operators,
+	}
+
+	r, err := parser.Calculate(input[0])
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -32,4 +44,5 @@ func args() []string {
 	}
 	return ret
 }
+
 ```

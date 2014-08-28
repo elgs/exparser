@@ -76,7 +76,7 @@ func TestEvaluate(t *testing.T) {
 		Operators: operators,
 	}
 	for _, v := range pass {
-		r, err := parser.Evaluate(v.in)
+		r, err := parser.Calculate(v.in)
 		if err != nil {
 			t.Error(err.Error())
 		}
@@ -91,25 +91,25 @@ func TestEvaluate(t *testing.T) {
 
 func TestTokenizeFilters(t *testing.T) {
 	operators := map[string]int{
-		"=":  1,
-		"!=": 1,
-		">":  1,
-		"<":  1,
-		">=": 1,
-		"<=": 1,
-	}
-	_ = []string{
-		":gt:",
-		":lt:",
-		"like",
-		"null",
-		"not",
+		":or:": 10,
+		":nd:": 10,
+		":eq:": 20,
+		":ne:": 20,
+		":gt:": 20,
+		":lt:": 20,
+		":ge:": 20,
+		":le:": 20,
+		":li:": 20,
+		":nl:": 20,
+		":nu:": 20,
+		":nn:": 20,
+		":rl:": 20,
 	}
 	var pass = []struct {
 		in string
 		ex []string
 	}{
-		{"A!='ABC'", []string{"A", "!=", "ABC"}},
+		{"A:ne:'A (B)' C", []string{"A", ":ne:", "A (B)", "C"}},
 	}
 	var fail = []struct {
 		in string
