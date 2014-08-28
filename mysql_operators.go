@@ -64,6 +64,11 @@ var MysqlOperators = map[string]*Operator{
 
 func evalMysql(op string, left string, right string) (string, error) {
 	left = strings.ToUpper(strings.Replace(left, "--", "", -1))
+
+	if op != ":or:" && op != ":nd:" {
+		left = strings.ToUpper(strings.Replace(left, "'", "''", -1))
+		right = strings.ToUpper(strings.Replace(right, "'", "''", -1))
+	}
 	switch op {
 	case ":or:":
 		return fmt.Sprint("(", left, " OR ", right, ")"), nil

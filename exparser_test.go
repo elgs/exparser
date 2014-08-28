@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func xTestTokenize(t *testing.T) {
+func TestTokenize(t *testing.T) {
 
 	var pass = []struct {
 		in string
@@ -41,7 +41,7 @@ func xTestTokenize(t *testing.T) {
 	}
 }
 
-func xTestEvaluate(t *testing.T) {
+func TestEvaluate(t *testing.T) {
 	var pass = []struct {
 		in string
 		ex string
@@ -105,7 +105,7 @@ func TestCalculateMySQLFilters(t *testing.T) {
 		in string
 		ex string
 	}{
-		{`f1:gt:'A (B)':or:f2:lt:4:nd:f3:nn:''`, "((F1>'A (B)') OR ((F2<'4') AND (F3 IS NOT NULL)))"},
+		{`f1:gt:"A '(B)":or:f2:lt:4:nd:f3:nn:1`, "((F1>'A ''(B)') OR ((F2<'4') AND (F3 IS NOT NULL)))"},
 	}
 	var fail = []struct {
 		in string
