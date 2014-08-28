@@ -37,11 +37,13 @@ func (this *Parser) Calculate(expression string) (string, error) {
 
 func (this *Parser) Evaluate(ts *Lifo, postfix bool) (string, error) {
 	newTs := &Lifo{}
+	usefulWork := false
 	for ti := ts.Pop(); ti != nil; ti = ts.Pop() {
 		t := ti.(string)
 		switch {
 		case this.Operators[t] != nil:
 			// operators
+			usefulWork = true
 			if postfix {
 				right := newTs.Pop()
 				left := newTs.Pop()
@@ -54,10 +56,10 @@ func (this *Parser) Evaluate(ts *Lifo, postfix bool) (string, error) {
 					r = right.(string)
 				}
 				result, err := this.Operators[t].Eval(t, l, r)
+				newTs.Push(result)
 				if err != nil {
 					return "", errors.New(fmt.Sprint("Failed to evaluate:", l, t, r))
 				}
-				newTs.Push(result)
 			} else {
 				right := ts.Pop()
 				left := ts.Pop()
@@ -70,16 +72,19 @@ func (this *Parser) Evaluate(ts *Lifo, postfix bool) (string, error) {
 					r = right.(string)
 				}
 				result, err := this.Operators[t].Eval(t, l, r)
+				newTs.Push(result)
 				if err != nil {
 					return "", errors.New(fmt.Sprint("Failed to evaluate:", l, t, r))
 				}
-				newTs.Push(result)
 			}
 		default:
 			// operands
 			newTs.Push(t)
 		}
 		//newTs.Print()
+	}
+	if !usefulWork {
+		return "", errors.New("Failed to evaluate: no valid operator found.")
 	}
 	if newTs.Len() == 1 {
 		return newTs.Pop().(string), nil
@@ -171,10 +176,8 @@ func (this *Parser) Tokenize(exp string) (tokens []string) {
 			} else {
 				sq = !sq
 				if !sq {
-					if len(tmp) > 0 {
-						tokens = append(tokens, tmp)
-						tmp = ""
-					}
+					tokens = append(tokens, tmp)
+					tmp = ""
 				}
 			}
 		case s == "\"":
@@ -183,10 +186,8 @@ func (this *Parser) Tokenize(exp string) (tokens []string) {
 			} else {
 				dq = !dq
 				if !dq {
-					if len(tmp) > 0 {
-						tokens = append(tokens, tmp)
-						tmp = ""
-					}
+					tokens = append(tokens, tmp)
+					tmp = ""
 				}
 			}
 		case s == "+" || s == "-" || s == "(" || s == ")":

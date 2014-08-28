@@ -4,7 +4,7 @@ package exparser
 import (
 	"errors"
 	"fmt"
-	//"strings"
+	"strings"
 )
 
 var MysqlOperators = map[string]*Operator{
@@ -63,6 +63,7 @@ var MysqlOperators = map[string]*Operator{
 }
 
 func evalMysql(op string, left string, right string) (string, error) {
+	left = strings.ToUpper(strings.Replace(left, "--", "", -1))
 	switch op {
 	case ":or:":
 		return fmt.Sprint("(", left, " OR ", right, ")"), nil
