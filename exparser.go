@@ -45,19 +45,35 @@ func (this *Parser) Evaluate(ts *Lifo, postfix bool) (string, error) {
 			if postfix {
 				right := newTs.Pop()
 				left := newTs.Pop()
-				r, err := this.Operators[t].Eval(t, left.(string), right.(string))
-				if left == nil || right == nil || err != nil {
-					return "", errors.New(fmt.Sprint("Failed to evaluate:", left, t, right))
+				l := ""
+				r := ""
+				if left != nil {
+					l = left.(string)
 				}
-				newTs.Push(r)
+				if right != nil {
+					r = right.(string)
+				}
+				result, err := this.Operators[t].Eval(t, l, r)
+				if err != nil {
+					return "", errors.New(fmt.Sprint("Failed to evaluate:", l, t, r))
+				}
+				newTs.Push(result)
 			} else {
 				right := ts.Pop()
 				left := ts.Pop()
-				r, err := this.Operators[t].Eval(t, left.(string), right.(string))
-				if left == nil || right == nil || err != nil {
-					return "", errors.New(fmt.Sprint("Failed to evaluate:", left, t, right))
+				l := ""
+				r := ""
+				if left != nil {
+					l = left.(string)
 				}
-				newTs.Push(r)
+				if right != nil {
+					r = right.(string)
+				}
+				result, err := this.Operators[t].Eval(t, l, r)
+				if err != nil {
+					return "", errors.New(fmt.Sprint("Failed to evaluate:", l, t, r))
+				}
+				newTs.Push(result)
 			}
 		default:
 			// operands
@@ -68,9 +84,8 @@ func (this *Parser) Evaluate(ts *Lifo, postfix bool) (string, error) {
 	if newTs.Len() == 1 {
 		return newTs.Pop().(string), nil
 	} else {
-		this.Evaluate(newTs, !postfix)
+		return this.Evaluate(newTs, !postfix)
 	}
-	return "", errors.New("Error")
 }
 
 // false o1 in first, true o2 out first

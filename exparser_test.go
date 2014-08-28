@@ -2,6 +2,7 @@
 package exparser
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -93,6 +94,32 @@ func TestTokenizeFilters(t *testing.T) {
 		if !CompareSlices(tokens, v.ex) {
 			t.Error("Expected:", v.ex, "actual:", tokens)
 		}
+	}
+	for _, _ = range fail {
+
+	}
+}
+
+func TestCalculateMySQLFilters(t *testing.T) {
+	var pass = []struct {
+		in string
+		ex []string
+	}{
+		{"F1:gt:'A(B)':or:F2:lt:4:nd:F3:nn:", []string{"A", ":ne:", "A (B)", "C"}},
+	}
+	var fail = []struct {
+		in string
+		ex []string
+	}{}
+	parser := &Parser{
+		Operators: MysqlOperators,
+	}
+	for _, v := range pass {
+		r, err := parser.Calculate(v.in)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(r)
 	}
 	for _, _ = range fail {
 
