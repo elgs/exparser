@@ -7,7 +7,7 @@ import (
 	//"strings"
 )
 
-var mysqlOperators = map[string]*Operator{
+var MysqlOperators = map[string]*Operator{
 	":or:": &Operator{
 		Precedence: 1,
 		Eval:       evalMysql,

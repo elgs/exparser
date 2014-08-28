@@ -14,16 +14,8 @@ import (
 
 func main() {
 	input := args()
-	operators := map[string]int{
-		"+": 1,
-		"-": 1,
-		"*": 3,
-		"/": 3,
-		"%": 3,
-		"^": 4,
-	}
 	parser := &exparser.Parser{
-		Operators: operators,
+		Operators: exparser.CalcOperators,
 	}
 
 	r, err := parser.Calculate(input[0])
@@ -44,5 +36,4 @@ func args() []string {
 	}
 	return ret
 }
-
 ```

@@ -24,7 +24,7 @@ func TestTokenize(t *testing.T) {
 		ex []string
 	}{}
 	parser := &Parser{
-		Operators: calcOperators,
+		Operators: CalcOperators,
 	}
 	for _, v := range pass {
 		tokens := parser.Tokenize(v.in)
@@ -58,7 +58,7 @@ func TestEvaluate(t *testing.T) {
 		ex string
 	}{}
 	parser := &Parser{
-		Operators: calcOperators,
+		Operators: CalcOperators,
 	}
 	for _, v := range pass {
 		r, err := parser.Calculate(v.in)
@@ -86,7 +86,7 @@ func TestTokenizeFilters(t *testing.T) {
 		ex []string
 	}{}
 	parser := &Parser{
-		Operators: mysqlOperators,
+		Operators: MysqlOperators,
 	}
 	for _, v := range pass {
 		tokens := parser.Tokenize(v.in)

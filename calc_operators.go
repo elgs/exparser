@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-var calcOperators = map[string]*Operator{
+var CalcOperators = map[string]*Operator{
 	"+": &Operator{
 		Precedence: 1,
 		Eval:       evalCalc,
