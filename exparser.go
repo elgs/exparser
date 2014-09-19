@@ -100,7 +100,7 @@ func (this *Parser) shunt(o1, o2 string) (bool, error) {
 	if op1 == nil || op2 == nil {
 		return false, errors.New(fmt.Sprint("Invalid operators:", o1, o2))
 	}
-	if op1.Precedence < op2.Precedence || op1.Precedence == op2.Precedence && op1.Precedence%2 == 1 {
+	if op1.Precedence < op2.Precedence || (op1.Precedence <= op2.Precedence && op1.Precedence%2 == 1) {
 		return true, nil
 	}
 	return false, nil
