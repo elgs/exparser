@@ -14,6 +14,14 @@ type Element struct {
 	next  *Element
 }
 
+type Stack interface {
+	Len() int
+	Push(value interface{})
+	Pop() (value interface{})
+	Peep() (value interface{})
+	Print()
+}
+
 func (s *Lifo) Len() int {
 	return s.size
 }
