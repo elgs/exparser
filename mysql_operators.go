@@ -60,6 +60,42 @@ var MysqlOperators = map[string]*Operator{
 		Precedence: 5,
 		Eval:       evalMysql,
 	},
+	":eq;": &Operator{
+		Precedence: 5,
+		Eval:       evalMysql,
+	},
+	":ne;": &Operator{
+		Precedence: 5,
+		Eval:       evalMysql,
+	},
+	":gt;": &Operator{
+		Precedence: 5,
+		Eval:       evalMysql,
+	},
+	":lt;": &Operator{
+		Precedence: 5,
+		Eval:       evalMysql,
+	},
+	":ge;": &Operator{
+		Precedence: 5,
+		Eval:       evalMysql,
+	},
+	":le;": &Operator{
+		Precedence: 5,
+		Eval:       evalMysql,
+	},
+	":li;": &Operator{
+		Precedence: 5,
+		Eval:       evalMysql,
+	},
+	":nl;": &Operator{
+		Precedence: 5,
+		Eval:       evalMysql,
+	},
+	":rl;": &Operator{
+		Precedence: 5,
+		Eval:       evalMysql,
+	},
 }
 
 func evalMysql(op string, left string, right string) (string, error) {
@@ -96,6 +132,25 @@ func evalMysql(op string, left string, right string) (string, error) {
 		return fmt.Sprint("(", left, " IS NOT NULL)"), nil
 	case ":rl:":
 		return fmt.Sprint("(", left, " RLIKE '", right, "')"), nil
+
+	case ":eq;":
+		return fmt.Sprint("(", left, "=", right, ")"), nil
+	case ":ne;":
+		return fmt.Sprint("(", left, "!=", right, ")"), nil
+	case ":gt;":
+		return fmt.Sprint("(", left, ">", right, ")"), nil
+	case ":lt;":
+		return fmt.Sprint("(", left, "<", right, ")"), nil
+	case ":ge;":
+		return fmt.Sprint("(", left, ">=", right, ")"), nil
+	case ":le;":
+		return fmt.Sprint("(", left, "<=", right, ")"), nil
+	case ":li;":
+		return fmt.Sprint("(", left, " LIKE ", right, ")"), nil
+	case ":nl;":
+		return fmt.Sprint("(", left, " NOT LIKE ", right, ")"), nil
+	case ":rl;":
+		return fmt.Sprint("(", left, " RLIKE ", right, ")"), nil
 	}
 	return "", errors.New(fmt.Sprint("Failed to evaluate:", left, op, right))
 }
