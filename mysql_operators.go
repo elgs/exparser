@@ -100,7 +100,7 @@ var MysqlOperators = map[string]*Operator{
 }
 
 func evalMysql(op string, left string, right string) (string, error) {
-	left = strings.ToUpper(strings.Replace(left, "--", "", -1))
+	left = strings.ToUpper(strings.Replace(left, "-- ", "", -1))
 
 	if op != ":or:" && op != ":nd:" {
 		left = strings.ToUpper(strings.Replace(left, "'", "''", -1))
